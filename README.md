@@ -9,7 +9,7 @@
 
 [传感器校正API](https://github.com/UbiroutingDevelop/NaturePosition-Android-SDK/blob/master/calibrate.md)
 
-[常见问题]（https://github.com/UbiroutingDevelop/NaturePosition-Android-SDK/blob/master/question.md)
+[常见问题](https://github.com/UbiroutingDevelop/NaturePosition-Android-SDK/blob/master/question.md)
 
 
 
