@@ -1,10 +1,6 @@
-SDK版本号0.9（alpha）
-
-
 #1 获取SDK
-您可发送邮件至[sdk@ubirouting.com](mailto:sdk@ubirouting.com)获取最新的Android SDK。详见概述。
 
-----
+SDK版本号v0.16（alpha）
 
 #2 开发
 
