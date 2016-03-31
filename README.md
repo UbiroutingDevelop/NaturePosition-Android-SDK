@@ -10,6 +10,20 @@
 
 [WiFi采集和测试](http://open.ubirouting.com/client/detail/7)
 
+此外您还需登录[识途开发者平台](http://open.ubirouting.com)创建自己的应用。
+
+具体步骤如下：
+
++ 登录识途开发者平台，打开右上角-我的应用-新建应用；
++ 新建一个应用，在名称中输入APP的名称;
++ signature处填入: ```包名;Android签名证书的sha1值```，例如
+
+```
+com.example.app;94:70:D4:A2:CF:98:0F:69:0B:2C:68:99:F5:A0:FB:94:3E:E7:52:3A
+```
+
++ 应用机型处选择Android
++ 点击确定，系统即生成唯一的key。
 
 #1 获取SDK
 
