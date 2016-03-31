@@ -1,6 +1,21 @@
+#0 准备工作
+
+在识途云或识途Creator中，完成新增场地的工作；
+
+并按照如下说明，对场地进行现场采集。
+
+[地磁采集和测试](http://open.ubirouting.com/client/detail/8)
+
+[iBeacon采集和测试](http://open.ubirouting.com/client/detail/6)
+
+[WiFi采集和测试](http://open.ubirouting.com/client/detail/7)
+
+
 #1 获取SDK
 
 SDK版本号v0.16（alpha）
+
+[Android 定位DEMO](https://github.com/UbiroutingDevelop/NaturePosition-Android-Demo)
 
 #2 开发
 
@@ -26,9 +41,13 @@ SDK版本号v0.16（alpha）
 
 若要使用识途的WiFi定位，还需加上如下权限
 
-```
-android.permission.WAKE_LOCK
-```
+
+	android.permission.WAKE_LOCK
+
+
+若使用iBeacon定位，需加上
+
+	<uses-permission android:name="android.permission.BLUETOOTH" />
 
 
 ##2.3 添加初始化代码
@@ -45,7 +64,7 @@ ShituLocationLoader.getInstance(this);
 获取建筑列表，先实例化```ShituStoreDatas对象```，然后调用```fetchDatas()```方法。```FetchDatas()```方法使用异步获取列表，获取对象会回调至```OnGetSHTStoreDataListener```中。
 
 ```
-//为Activity或其他对象，实施OnGetSHTStoreDataListener接口。
+//为Activity或其他对象，实施OnGetStoreDataListener接口。
 
 // this为context对象
 ShituStoreDatas storeDatas = new ShituStoreDatas(this);
@@ -67,51 +86,55 @@ public void onGetDatas(List<ShituStore> stores) {
 + 初始楼层
 + 地图像素宽度的集合（SparseIntArray对象，键为楼层，值为像素宽度）
 + 地图像素高度的集合（SparseIntArray对象，键为楼层，值为像素高度）
-+ 定位模式，可选的为```ShituLocationManager.LOC_MAG_ONLY```, ```ShituLocationManager.LOC_MAG_WIFI```以及```ShituLocationManager.LOC_WIFI_ONLY```。
-
-其中，像素高度及宽度依照具体室内地图图片，**该宽度与高度，应等于您在识途云平台上传入的地图图片的高宽度，其包含楼层也需与识途云平台上传的一致**，否则，因比例尺错误会引起定位的准确性降低。
++ 定位模式，可选的为```ShituLocationManager.LOC_MAG_ONLY```, ```ShituLocationManager.LOC_MAG_WIFI```，```ShituLocationManager.LOC_WIFI_ONLY```，```ShituLocationManager.LOC_IBEACON_ONLY```。
 
 此外，不同定位模式对应的技术不同，各定位模式介绍如下：
 
 + LOC_MAG_ONLY: 使用纯地磁定位，暂无法确定初始楼层（我们会在今后的版本中提供该功能），需传入准确的初始楼层；
 + LOC_MAG_WIFI: 使用地磁与WiFi混合定位，可自动判断初始楼层；
 + LOC_WIFI_ONLY: 使用纯WiFi定位，可自动判断初始楼层；
++ LOC_IBEACON_ONLY: 使用iBeacon定位，可自动判断楼层。
 
 例如
 
 ```
-ShituLocationParameters parameters = new ShituLocationParameters(store, (short)6, mapWidthPx, mapHeightPx, ShituLocationManager.LOC_MAG_ONLY);
+ShituLocationParameters para = new ShituLocationParameters(store, 1, ShituLocationManager.LOC_IBEACON_ONLY);
 	
 ```
 
 然后使用ShituLocationManager.newManager()构建ShituLocationManager对象，并在Activity的生命周期方法中调用相关的方法。
 
-设置回调setOnNatureListener()，并在回调中实现相应的逻辑;
+设置回调ShituLocationListener()，并在回调中实现相应的逻辑;
 
 示例：
 
 ```
-public class LocationTestActivity extends Activity implements ShituLocationListener {
-	private ShituLocationManager mLocationManager;
+public class LocateActivity extends Activity implements ShituLocationListener {
+
+	ShituLocationManager mLocationManager;
+
+	private static final String TAG = "LocateActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		//分别代入参数，store，由ShituStoreDatas获取的建筑对象，初始楼层（目前SDK版本暂不支持楼层判断）
-		//所显示的地图的像素宽度以及高度，以及定位模式		
-		ShituLocationParameters parameters = new ShituLocationParameters(store, (short)6, mapWidthPx, mapHeightPx, ShituLocationManager.LOC_MAG_ONLY);
 
-		mLocationManager = ShituLocationManager.newManager(this, parameters);
-		mLocationManager.setOnNatureListener(this);
+		// store为从2.4节中所述的对象
+		ShituStore store = getStore();
+		Toast.makeText(this, store.toString(), Toast.LENGTH_LONG).show();
+
+		ShituLocationParameters para = new ShituLocationParameters(store, (short) 1, ShituLocationManager.LOC_IBEACON_ONLY);
+		mLocationManager = ShituLocationManager.newManager(this, para);
+		mLocationManager.setOnLocationListener(this);
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		mLocationManager.onResume();
 		mLocationManager.start();
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
@@ -125,32 +148,33 @@ public class LocationTestActivity extends Activity implements ShituLocationListe
 	}
 
 	@Override
-	public void onGetLocation(Position position) {
-		//获得坐标
+	public void onException(String arg0, int arg1) {
+		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void onGetStatus(int status) {
-		//获得定位状态，包括
-		//STATUS_START_LOCATE: 定位开始，请用户沿当前道路持续行走即可获取位置
-	 	//STATUS_FIRST_RELIABLE_LOCATE: 获取第一个相对可靠位置
-	 	//STATUS_MEDIUM_ACCURACY: 传感器精度一般，可进行定位，建议进矫正
-	 	//STATUS_UNRELIABLE_ACCURACY: 传感器精度不可靠，必须进行矫正方可正确定位
-	 	//STATUS_FAILED_TO_GETLOCATION_MANYTIMES: 长时间无法获取位置，建议重新行走定位
-		//STATUS_RECONNECT_SUCCESS, 重新连接成功
+	public void onGetAngle(int arg0) {
+		Log.d(TAG, "angle is " + arg0);
+	}
+
+	@Override
+	public void onGetLocation(Position arg0) {
+		Log.d(TAG, "position is " + arg0);
+	}
+
+	@Override
+	public void onGetStatus(int arg0) {
+		Log.d(TAG, "status is " + arg0);
 
 	}
 
 	@Override
-	public void onGetAngle(int angle) {
-		//获得角度
-	}
+	public void onSwitchFloor(int arg0) {
+		Log.d(TAG, "switch to floor " + arg0);
 
-	@Override
-	public void onException(String e, int errorType) {
-		//异常
 	}
+}
 ```
 
 ##2.6 返回结果
